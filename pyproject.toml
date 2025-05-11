@@ -1,0 +1,8 @@
+[tool.ruff]
+line-length = 78
+target-version = "py39"
+select = ["E", "F", "I"]
+exclude = ["env", "venv", "__pycache__"]
+
+[tool.ruff.format]
+docstring-code-format = true

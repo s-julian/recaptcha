@@ -172,3 +172,6 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Microsoft Visual Studio Code workspace files
+.vscode/
