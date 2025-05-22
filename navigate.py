@@ -26,10 +26,10 @@ def go_to_url(url):
     pyautogui.typewrite(url, interval=0.05)
     pyautogui.press('enter')
 
-def random_direction(steps = 100,size = 20,delay = 0.1):
+def random_direction(steps = 100,size = 60,delay = 0.1):
     for i in range(steps):
         x,y = pyautogui.position()
-        direction = random.choice(['u','d','l','r'])
+        direction = random.choice(['u','d','l','r','t'])
         
         if direction == 'u':
             y = max(0, y - size)
@@ -39,11 +39,17 @@ def random_direction(steps = 100,size = 20,delay = 0.1):
             x = max(0, x - size)
         elif direction == 'r':
             x = min(pyautogui.size().width - 1, x + size)
+        elif direction == 't':
+           pyautogui.hotkey('command', 't')
 
         pyautogui.moveTo(x, y, duration=0.1)
+        if direction == 't':
+            pyautogui.click()
         time.sleep(delay)
 
+#switching tabs (at random moments)
 if __name__ == "__main__":
     open()
     go_to_url("https://www.google.com")
-    #random_direction()
+    #go_to_url("http://127.0.0.1:8000/")
+    random_direction()
