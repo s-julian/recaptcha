@@ -25,3 +25,16 @@ async def read_item(item_id: int, q: Union[str, None] = None):
 @app.put("/items/{item_id}")
 async def update_item(item_id: int, item: Item):
     return {"item_name": item.name, "item_id": item_id}
+
+
+if __name__ == "__main__":
+    import os
+
+    import uvicorn
+
+    uvicorn.run(
+        "server:app",
+        host=os.getenv("DEV_SERVER_HOST"),
+        port=int(os.getenv("DEV_SERVER_PORT")),
+        reload=True,
+    )
