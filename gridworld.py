@@ -29,31 +29,46 @@ class GridWorld:
         return self.screenshot
 
     def get_current_location(self) -> tuple[int, int]:
-        self.current_loc = pyautogui.position()
+        position = pyautogui.position()
+        self.current_loc = self.scale_position(position.x, position.y)
         return self.current_loc
+
+    def scale_position(self, pos_x, pos_y):
+        screenshot_height, screenshot_width, _ = self.screenshot.shape
+        logical_width, logical_height = self.screen_size
+        if (screenshot_width, screenshot_height) != (
+            logical_width,
+            logical_height,
+        ):
+            scale_x = screenshot_width / logical_width
+            scale_y = screenshot_height / logical_height
+            pos_scaled = (int(pos_x * scale_x), int(pos_y * scale_y))
+        else:
+            pos_scaled = (pos_x, pos_y)
+        return pos_scaled
 
     def get_target_location_pag(
         self, target_img_path: str, confidence: float = 0.8
     ) -> tuple[int, int]:
-        # TODO: pyauto-gui implementation
-        pass
+        loc = pyautogui.locateCenterOnScreen(target_img_path, confidence)
+        if loc is None:
+            raise Exception("Error! Target was not found.")
+        self.target_loc = (loc.x, loc.y)
+        return self.target_loc
 
     def get_target_location_ocv(
         self, target_img_path: str, confidence: float = 0.8
     ) -> tuple[int, int]:
         if self.screenshot is None:
             self.take_screenshot()
-        template = cv2.imread(target_img_path)
+        screenshot = cv2.cvtColor(self.screenshot, cv2.COLOR_RGB2GRAY)
+        template = cv2.imread(target_img_path, cv2.IMREAD_GRAYSCALE)
         if template is None:
-            print("Error! Template was not found:", target_img_path)
-        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        screenshot_gray = cv2.cvtColor(self.screenshot, cv2.COLOR_RGB2GRAY)
-        res = cv2.matchTemplate(
-            screenshot_gray, template_gray, cv2.TM_SQDIFF_NORMED
-        )
+            raise Exception("Error! Template was not found:", target_img_path)
+        res = cv2.matchTemplate(screenshot, template, cv2.TM_SQDIFF_NORMED)
         min_v, max_v, min_loc, max_loc = cv2.minMaxLoc(res)
         if min_v <= confidence:
-            h, w = template_gray.shape
+            h, w = template.shape
             center_x = max_loc[0] + w // 2
             center_y = max_loc[1] + h // 2
             self.target_loc = (center_x, center_y)
@@ -112,7 +127,7 @@ class GridWorld:
             plt.plot(
                 path_x, path_y, "b-", linewidth=2, alpha=0.7, label="Path"
             )
-        plt.title("Girdworld")
+        plt.title("Gridworld")
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.show()
@@ -127,5 +142,6 @@ if __name__ == "__main__":
     g1.setup_env(target_img_path)
     g1.display_gridworld(
         g1.get_current_location(),
-        g1.get_target_location_ocv("./data/target.png"),
+        g1.get_target_location_ocv(target_img_path),
     )
+    print(f"current mouse position: {g1.current_loc}")
