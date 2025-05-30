@@ -3,7 +3,7 @@ import Utils.Config as cfg
 
 def verify_recaptcha_v3(token: str) -> dict:
     payload = {
-        'secret': cfg.RECAPTCHA_SITE_KEY,
+        'secret': cfg.RECAPTCHA_SECRET_KEY,
         'response': token
     }
 

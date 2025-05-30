@@ -7,7 +7,7 @@
   <script>
     function executeRecaptcha() {
       grecaptcha.ready(function() {
-        grecaptcha.execute('use_your_token_here', {action: 'homepage'}).then(function(token) {
+        grecaptcha.execute('6Lf6fk0rAAAAABbMnLX6aKkuVvgobzSwmxh6DwZH', {action: 'homepage'}).then(function(token) {
           document.getElementById('recaptcha-token').value = token;
           console.log('Token:', token);
           const visibleToken = document.getElementById('visible-token');

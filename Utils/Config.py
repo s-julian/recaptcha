@@ -4,7 +4,7 @@ import json
 
 load_dotenv()
 
-RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY")
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
 ANTCPT_URL = os.getenv("ANTCPT_URL")
 DEMO_URL = os.getenv("DEMO_URL")
 GOOGLE_RECAPTCHA_V2_URL = os.getenv("GOOGLE_RECAPTCHA_V2_URL")
