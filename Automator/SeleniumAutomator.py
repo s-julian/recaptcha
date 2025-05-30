@@ -7,9 +7,10 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from Automator.AutomatorInterface import AutomatorInterface
 import time
+import Utils.Config as cfg
 
 class SeleniumAutomator(AutomatorInterface):
-    def __init__(self, url: str, driver_path: str = "chromedriver", headless: bool = False):
+    def __init__(self, url: str = "", driver_path: str = "chromedriver", headless: bool = False):
         self.url = url
         self.driver_path = driver_path
         self.driver = None
@@ -18,7 +19,7 @@ class SeleniumAutomator(AutomatorInterface):
         self.reference_element = None
         self.mapper = None
 
-    def launch(self):
+    def launch(self, url: str = ""):
         options = Options()
         if self.headless:
             options.add_argument("--headless=new")
@@ -29,10 +30,24 @@ class SeleniumAutomator(AutomatorInterface):
 
         service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=options)
-        self.driver.get(self.url)
+        self.driver.get(url)
         print(f"[INFO] Launched browser at {self.url} | Headless: {self.headless}")
+    
+    def go_to_url(self, url: str):
+        self.driver.get(url)
+        time.sleep(0.5)
+        print(f"[INFO] Navigated to: {url}")
+    
+    def click_at(self, element_selector: str):
+        try:
+            element = self.driver.find_element("css selector", element_selector)
+            element.click()
+            print(f"[INFO] Clicked Selenium element: {element_selector}")
+        except Exception as e:
+            print(f"[ERROR] Failed to click element: {e}")
 
-    def find_captcha_box(self, by=By.CLASS_NAME, value="g-recaptcha"):
+    def find_captcha_box(self, by=By.ID):
+        value = cfg.V2_CHECKBOX_SELECTOR
         try:
             iframe = self.driver.find_element(By.XPATH, "//iframe[contains(@src, 'recaptcha')]")
             self.driver.switch_to.frame(iframe)
@@ -52,12 +67,10 @@ class SeleniumAutomator(AutomatorInterface):
         return None
 
     def click_box(self):
+        selector = cfg.V2_CHECKBOX_SELECTOR
         try:
-            iframe = self.driver.find_element(By.XPATH, "//iframe[contains(@src, 'recaptcha')]")
-            self.driver.switch_to.frame(iframe)
-            time.sleep(1)
-
-            checkbox = self.driver.find_element(By.ID, "recaptcha-anchor")
+            self.find_captcha_box()
+            checkbox = self.driver.find_element(By.ID, selector)
             checkbox.click()
             print("[INFO] Clicked reCAPTCHA checkbox.")
             self.driver.switch_to.default_content()
@@ -85,6 +98,22 @@ class SeleniumAutomator(AutomatorInterface):
         self.driver.refresh()
         time.sleep(2)
 
-    def close(self):
+    def close_browser(self):
         self.driver.quit()
         print("[INFO] Closed browser.")
+    
+    def copy_token(self, input_field_id="recaptcha-token", timeout=10):
+        for _ in range(timeout):
+            try:
+                token = self.driver.execute_script(
+                    f"return document.getElementById('{input_field_id}').value;"
+                )
+                if token:
+                    print(f"[INFO] Retrieved reCAPTCHA token: {token[:30]}...")
+                    return token
+            except Exception as e:
+                print(f"[WARN] Error while fetching token: {e}")
+            time.sleep(1)
+
+        print("[ERROR] Token not retrieved within timeout.")
+        return None

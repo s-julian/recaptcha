@@ -2,7 +2,13 @@ from abc import ABC, abstractmethod
 
 class AutomatorInterface(ABC):
     @abstractmethod
-    def launch(self): pass
+    def launch(self, url:str): pass
+
+    @abstractmethod
+    def go_to_url(self, url:str): pass
+
+    @abstractmethod
+    def click_at(self): pass
 
     @abstractmethod
     def find_captcha_box(self): pass
@@ -23,4 +29,7 @@ class AutomatorInterface(ABC):
     def refresh(self): pass
 
     @abstractmethod
-    def close(self): pass
+    def close_browser(self): pass
+
+    @abstractmethod
+    def copy_token(self) -> str: pass
