@@ -35,7 +35,9 @@ python test_captchav2.py --automator pyautogui
 
 ### For re-captcha v3, first register for a v3 key: https://www.google.com/recaptcha/admin/create
 
-### You will get a Site key (public) and a secret key
+### You will get a Site key (public) and a secret key. Enter your secret key in the .env file (RECAPTCHA_SECRET_KEY)
+
+### Open recaptcha-v3.html and replce 'yourToken' in the following line with your Site Key "grecaptcha.execute('yourToken', {action: 'homepage'}).then(function(token) {"
 
 ### To run the automator against recaptcha v3 using Selenium
 
