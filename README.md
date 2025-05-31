@@ -39,7 +39,7 @@ python test_captchav2.py --automator pyautogui
 
 ### Open recaptcha-v3.html and replce 'yourToken' in the following line with your Site Key "grecaptcha.execute('yourToken', {action: 'homepage'}).then(function(token) {"
 
-### To run the automator against recaptcha v3 using Selenium
+### To run the automator against recaptcha v3 using Selenium, first start the server (python -m http.server), then run the following program
 
 python test_captchav3.py --automator selenium
 
