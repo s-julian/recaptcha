@@ -33,7 +33,8 @@ class PyAutoGuiAutomator(AutomatorInterface):
         pass
 
     def click_box(self):
-        self.click_at(cfg.V2_CHECKBOX_POS)
+        #self.click_at(cfg.V2_CHECKBOX_POS)
+        self.click_at(cfg.V2_LOCAL_BOX)
 
     def move_mouse_to(self, x:int, y:int):
         pyautogui.moveTo(x, y, duration=random.uniform(0.3, 0.7))
@@ -116,3 +117,16 @@ class PyAutoGuiAutomator(AutomatorInterface):
             if direction == 't':
                 pyautogui.click()
             time.sleep(delay)
+    
+    def challenge_triggered(self) -> bool:
+        location = pyautogui.locateOnScreen('images/challenge_grid.png', confidence=0.8)
+        if location:
+            print("[INFO] Challenge detected on screen.")
+            return True
+        else:
+            print("[INFO] No challenge detected.")
+            return False
+
+    def find_mouse_position(self):
+        x, y = pyautogui.position()
+        print(f"X: {x}, Y: {y}")

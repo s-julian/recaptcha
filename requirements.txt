@@ -16,3 +16,5 @@ webdriver-manager
 Pillow
 python-dotenv
 pyperclip
+stable-baselines3[extra]
+opencv-python

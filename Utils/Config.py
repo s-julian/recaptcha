@@ -16,3 +16,4 @@ with open("config.json") as f:
 V2_CHECKBOX_POS = tuple(data["v2_checkbox_position"])
 V3_TOKEN_POS = tuple(data["v3_token_position"])
 V2_CHECKBOX_SELECTOR = data["v2_checkbox_selector"]
+V2_LOCAL_BOX = data["local_pos"]

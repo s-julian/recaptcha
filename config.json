@@ -1,5 +1,6 @@
 {
     "v2_checkbox_position": [55, 461],
     "v2_checkbox_selector": "recaptcha-anchor",
-    "v3_token_position": [116, 277]
+    "v3_token_position": [116, 277],
+    "local_pos": [30, 199]
 }

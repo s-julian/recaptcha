@@ -33,3 +33,6 @@ class AutomatorInterface(ABC):
 
     @abstractmethod
     def copy_token(self) -> str: pass
+
+    @abstractmethod
+    def challenge_triggered(self) -> bool: pass

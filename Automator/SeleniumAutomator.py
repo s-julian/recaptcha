@@ -117,3 +117,19 @@ class SeleniumAutomator(AutomatorInterface):
 
         print("[ERROR] Token not retrieved within timeout.")
         return None
+    
+
+    def challenge_triggered(self) -> bool:
+        try:
+            # Switch to the outer recaptcha frame
+            self.driver.switch_to.default_content()
+            frames = self.driver.find_elements(By.TAG_NAME, "iframe")
+            for frame in frames:
+                if "bframe" in frame.get_attribute("name"):
+                    print("[INFO] Challenge detected.")
+                    return True
+            print("[INFO] No challenge iframe found.")
+            return False
+        except Exception as e:
+            print(f"[ERROR] Challenge detection failed: {e}")
+            return False
