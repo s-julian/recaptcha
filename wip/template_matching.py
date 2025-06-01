@@ -93,8 +93,19 @@ for meth in methods:
     plt.subplot(122), plt.imshow(img_rgb)  # color identification
     plt.title(f"Detected Points: {meth}"), plt.xticks([]), plt.yticks([])
     plt.suptitle(meth)
+    import datetime as dt
+    import os
 
+    file_dir = os.getcwd()
+    data_dir = "data"
+    test_dir = "test"
+    datetime = dt.datetime.now().strftime("%Y-%m-%d-%H:%M:%S.%f")
+    filename = f"template_match_{meth}_{datetime}.png"
+    file_path = os.path.join(file_dir, data_dir, test_dir, filename)
+    plt.savefig(file_path)
     plt.show()
 
-    print(">> target region (top_left, size):", top_left, (w, h))
-    print(">> mouse region (scaled):", mouse_scaled)
+    print(
+        f">> target region (top_left, size):, top_left={top_left}, width={w}, height={h}"  # noqa: E501
+    )
+    print(f">> mouse region (scaled) location: {mouse_scaled}")
