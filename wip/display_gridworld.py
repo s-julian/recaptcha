@@ -64,7 +64,7 @@ def display_gridworld(
     fig, ax = plt.subplots(figsize=(7, 5))
     colors = ["black", "white", "red", "green"]
     cmap = ListedColormap(colors)
-    im = ax.imshow(
+    im = ax.imshow(  # noqa: F841
         matrix,
         cmap=cmap,
         vmin=0,
