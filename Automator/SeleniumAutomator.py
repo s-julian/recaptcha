@@ -18,18 +18,19 @@ class SeleniumAutomator(AutomatorInterface):
         self.captcha_box = None
         self.reference_element = None
         self.mapper = None
+        self.options = Options()
+        self.options.add_argument("--disable-blink-features=AutomationControlled")
+        self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        if self.headless:
+            self.options.add_argument("--headless=new")
+            self.options.add_argument("--disable-gpu")   
+            self.options.add_argument("--window-size=1920,1080")
+        else:
+            self.options.add_argument("--start-maximized")
 
     def launch(self, url: str = ""):
-        options = Options()
-        if self.headless:
-            options.add_argument("--headless=new")
-            options.add_argument("--disable-gpu")
-            options.add_argument("--window-size=1920,1080")
-        else:
-            options.add_argument("--start-maximized")
-
         service = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=service, options=options)
+        self.driver = webdriver.Chrome(service=service, options=self.options)
         self.driver.get(url)
         print(f"[INFO] Launched browser at {self.url} | Headless: {self.headless}")
     
