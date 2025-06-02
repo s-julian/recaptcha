@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     try:
         automator.launch(cfg.DEMO_URL)
-        automator.go_to_url(cfg.DEMO_URL)
+        #automator.go_to_url(cfg.DEMO_URL)
         time.sleep(3)
         token = automator.copy_token()
         verify_recaptcha_v3(token)
