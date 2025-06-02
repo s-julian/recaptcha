@@ -18,6 +18,7 @@ class GridWorld:
         self.target_loc = None
         self.target_dim = None
         self.screenshot_dim = None
+        self.scale_factor = 1.0
 
     def __take_screenshot_and_mouse_position(self):
         mouse_pos = pyautogui.position()
@@ -60,27 +61,27 @@ class GridWorld:
         target_x, target_y = self.target_loc
         mouse_x, mouse_y = self.mouse_loc
         side_len = max(screenshot_width, screenshot_height)
-        scale_factor = self.matrix_size / side_len
+        self.scale_factor = self.matrix_size / side_len
 
         matrix = np.zeros((self.matrix_size, self.matrix_size), dtype=int)
 
         # Fill navigable area
-        display_w = int(screenshot_width * scale_factor)
-        display_h = int(screenshot_height * scale_factor)
+        display_w = int(screenshot_width * self.scale_factor)
+        display_h = int(screenshot_height * self.scale_factor)
         matrix[:display_h, :display_w] = 1
 
         # Fill target area
-        target_x_scaled = int(target_x * scale_factor)
-        target_y_scaled = int(target_y * scale_factor)
-        target_w_scaled = int(target_width * scale_factor)
-        target_h_scaled = int(target_height * scale_factor)
+        target_x_scaled = int(target_x * self.scale_factor)
+        target_y_scaled = int(target_y * self.scale_factor)
+        target_w_scaled = max(1, int(target_width * self.scale_factor))
+        target_h_scaled = max(1, int(target_height * self.scale_factor))
         x_end = min(target_x_scaled + target_w_scaled, self.matrix_size)
         y_end = min(target_y_scaled + target_h_scaled, self.matrix_size)
         matrix[target_y_scaled:y_end, target_x_scaled:x_end] = 2
 
         # Fill mouse position
-        mouse_x_scaled = int(mouse_x * scale_factor)
-        mouse_y_scaled = int(mouse_y * scale_factor)
+        mouse_x_scaled = int(mouse_x * self.scale_factor)
+        mouse_y_scaled = int(mouse_y * self.scale_factor)
         if (
             0 <= mouse_x_scaled < self.matrix_size
             and 0 <= mouse_y_scaled < self.matrix_size
