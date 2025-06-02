@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>reCAPTCHA v3 Demo</title>
+  <script src="https://www.google.com/recaptcha/api.js?render=6Lf6fk0rAAAAABbMnLX6aKkuVvgobzSwmxh6DwZH"></script>
+  <script>
+    function executeRecaptcha() {
+      grecaptcha.ready(function() {
+        grecaptcha.execute('6Lf6fk0rAAAAABbMnLX6aKkuVvgobzSwmxh6DwZH', {action: 'homepage'}).then(function(token) {
+          document.getElementById('recaptcha-token').value = token;
+          console.log('Token:', token);
+          const visibleToken = document.getElementById('visible-token');
+          visibleToken.innerText = token;
+          visibleToken.style.userSelect = 'text';
+        });
+      });
+    }
+
+    window.onload = executeRecaptcha;
+  </script>
+</head>
+<body>
+  <h1>reCAPTCHA v3 Integration</h1>
+  <p>This is a test page for executing reCAPTCHA v3</p>
+  <input type="text" id="recaptcha-token" placeholder="Token will appear here" style="width: 100%;">
+  <input type="hidden" id="recaptcha-token">
+  <div id="visible-token" style="margin-top:10px; font-family:monospace; font-size:14px; border:1px solid #ccc; padding:5px; width:80%; word-break:break-all;"></div>
+</body>
+</html>

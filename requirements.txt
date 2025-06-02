@@ -14,3 +14,7 @@ selenium
 fastapi[standard]
 requests
 ruff
+webdriver-manager
+Pillow
+python-dotenv
+pyperclip

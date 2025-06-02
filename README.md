@@ -1,22 +1,48 @@
 # reCAPTCHAv3 RL Agent
+
 ## CS 486 Section 1 Project
 
 ### Setup Project
-Install project requirements with the following command: ```pip install -r requirements.txt```
 
+Install project requirements with the following command: `pip install -r requirements.txt`
 
 ### Run Project
-Test pytorch environment by running test.py with command ```python3 test.py```. Output should specify what device is being used by pytorch (CUDA, Apple MPS, or CPU)
 
-Test FastAPI by running server.py with command ```fastapi dev server.py```.
+Test pytorch environment by running test.py with command `python3 test.py`. Output should specify what device is being used by pytorch (CUDA, Apple MPS, or CPU)
+
+Test FastAPI by running server.py with command `fastapi dev server.py`.
+
 - visit the following endpoints to verify the server is running:
-	- http://127.0.0.1:8000/
-	- http://127.0.0.1:8000/items/5?q=somequery
-	- http://127.0.0.1:8000/redoc
+  - http://127.0.0.1:8000/
+  - http://127.0.0.1:8000/items/5?q=somequery
+  - http://127.0.0.1:8000/redoc
 
 ### Documentation
+
 - Gymnasium: https://gymnasium.farama.org/introduction/basic_usage/
 - Selenium: https://www.selenium.dev/documentation/
 - PyAutoGUI: https://pyautogui.readthedocs.io/en/latest/index.html
 - FastAPI: https://fastapi.tiangolo.com
 - Polars: https://docs.pola.rs
+
+### To run the automator against recaptcha v2 using Selenium or PyAutoGUI
+
+python test_captchav2.py --automator selenium
+
+### To run the automator against recaptcha v2 using PyAutoGUI
+
+python test_captchav2.py --automator pyautogui
+
+### For re-captcha v3, first register for a v3 key: https://www.google.com/recaptcha/admin/create
+
+### You will get a Site key (public) and a secret key. Enter your secret key in the .env file (RECAPTCHA_SECRET_KEY)
+
+### Open recaptcha-v3.html and replce 'yourToken' in the following line with your Site Key "grecaptcha.execute('yourToken', {action: 'homepage'}).then(function(token) {"
+
+### To run the automator against recaptcha v3 using Selenium, first start the server (python -m http.server), then run the following program
+
+python test_captchav3.py --automator selenium
+
+### To run the automator against recaptcha v3 using Selenium
+
+python test_captchav3.py --automator pyautogui
