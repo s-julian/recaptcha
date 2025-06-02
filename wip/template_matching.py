@@ -89,7 +89,7 @@ for meth in methods:
     # show result
     plt.subplot(121), plt.imshow(res, cmap="gray")
     plt.title("Matching Result"), plt.xticks([]), plt.yticks([])
-    # plt.subplot(122), plt.imshow(img, cmap="gray")  # grayscale identification
+    # plt.subplot(122), plt.imshow(img, cmap="gray")  # grayscale identification  # noqa: E501
     plt.subplot(122), plt.imshow(img_rgb)  # color identification
     plt.title(f"Detected Points: {meth}"), plt.xticks([]), plt.yticks([])
     plt.suptitle(meth)

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>reCAPTCHA v3</title>
+  <script type="text/javascript" src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      height: 100%;
+      width: 100%;
+    }
+
+    .recaptcha-container {
+      grid-column: 2;
+      grid-row: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .recaptcha {
+      display: inline-flex;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #d3d3d3;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      padding: 10px 15px;
+      border-radius: 3px;
+      cursor: pointer;
+      user-select: none;
+      width: fit-content;
+    }
+
+    .checkbox-box {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      box-sizing: border-box;
+    }
+
+    .checkbox-box.checked {
+      background-color: #4285f4;
+      border-color: #4285f4;
+    }
+
+    .checkbox-box.checked::after {
+      content: "✓";
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .recaptcha-label {
+      font-size: 14px;
+      color: #000;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="grid-container">
+    <div class="recaptcha-container">
+      <div class="recaptcha" onclick="handleCheck(this)">
+        <div class="checkbox-box" id="checkbox"></div>
+        <div class="recaptcha-label">I'm not a robot</div>
+      </div>
+      <div class="result" id="score-output"></div>
+    </div>
+  </div>
+
+  <script>
+    function handleCheck(el) {
+      const box = document.getElementById("checkbox");
+      box.classList.toggle("checked");
+
+      if (!box.classList.contains("checked")) {
+        document.getElementById("score-output").textContent = "";
+        return;
+      }
+
+      grecaptcha.ready(function () {
+        grecaptcha.execute('6LdQMrwUAAAAAEsyd6RC7wJAWLUv0w2Xm6W8OiI8', { action: 'checkbox' }).then(function (token) {
+          fetch("/score", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: token })
+          })
+            .then(res => res.json())
+            .then(data => {
+              const score = data.score !== undefined ? data.score : "Error";
+              document.getElementById("score-output").textContent = "reCAPTCHA Score: " + score;
+            })
+            .catch(err => {
+              document.getElementById("score-output").textContent = "Failed to get score";
+              console.error(err);
+            });
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>

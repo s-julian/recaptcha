@@ -1,147 +1,265 @@
+import os
+import time
+from datetime import datetime
+
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import pyautogui
+from matplotlib.colors import ListedColormap
 
 
 class GridWorld:
-    def __init__(self, grid_size: tuple[int, int] = (100, 100), driver=None):
-        """
-        Create a GridWorld environment from the current webpage.
-        Args:
-            grid_size: (height, width) of grid representation (matrix)
-            driver: Selenium WebDriver instance (optional)
-        """
-        self.grid_size = grid_size
-        self.driver = driver
+    def __init__(self, matrix_size: int = 1000):
+        self.matrix_size = matrix_size
         self.screenshot = None
-        self.gridworld = None
-        self.current_loc = None
+        self.grid_matrix = None
+        self.mouse_loc = None
         self.target_loc = None
-        self.screen_size = pyautogui.size()
-        pyautogui.FAILSAFE = False
-        pass
+        self.target_dim = None
+        self.screenshot_dim = None
+        self.scale_factor = 1.0
 
-    def take_screenshot(self) -> np.ndarray:
-        # TODO: selenium method
-        img = pyautogui.screenshot()
-        self.screenshot = np.array(img)
-        return self.screenshot
+    def __take_screenshot_and_mouse_position(self):
+        mouse_pos = pyautogui.position()
+        screenshot = pyautogui.screenshot()
+        self.screenshot = np.array(screenshot)
+        screenshot_width, screenshot_height = screenshot.size
+        screen_width, screen_height = pyautogui.size()
+        self.screenshot_dim = (screenshot_width, screenshot_height)
 
-    def get_current_location(self) -> tuple[int, int]:
-        position = pyautogui.position()
-        self.current_loc = self.scale_position(position.x, position.y)
-        return self.current_loc
-
-    def scale_position(self, pos_x, pos_y):
-        screenshot_height, screenshot_width, _ = self.screenshot.shape
-        logical_width, logical_height = self.screen_size
+        # Handle display scaling
         if (screenshot_width, screenshot_height) != (
-            logical_width,
-            logical_height,
+            screen_width,
+            screen_height,
         ):
-            scale_x = screenshot_width / logical_width
-            scale_y = screenshot_height / logical_height
-            pos_scaled = (int(pos_x * scale_x), int(pos_y * scale_y))
-        else:
-            pos_scaled = (pos_x, pos_y)
-        return pos_scaled
-
-    def get_target_location_pag(
-        self, target_img_path: str, confidence: float = 0.8
-    ) -> tuple[int, int]:
-        loc = pyautogui.locateCenterOnScreen(target_img_path, confidence)
-        if loc is None:
-            raise Exception("Error! Target was not found.")
-        self.target_loc = (loc.x, loc.y)
-        return self.target_loc
-
-    def get_target_location_ocv(
-        self, target_img_path: str, confidence: float = 0.8
-    ) -> tuple[int, int]:
-        if self.screenshot is None:
-            self.take_screenshot()
-        screenshot = cv2.cvtColor(self.screenshot, cv2.COLOR_RGB2GRAY)
-        template = cv2.imread(target_img_path, cv2.IMREAD_GRAYSCALE)
-        if template is None:
-            raise Exception("Error! Template was not found:", target_img_path)
-        res = cv2.matchTemplate(screenshot, template, cv2.TM_SQDIFF_NORMED)
-        min_v, max_v, min_loc, max_loc = cv2.minMaxLoc(res)
-        if min_v <= confidence:
-            h, w = template.shape
-            center_x = max_loc[0] + w // 2
-            center_y = max_loc[1] + h // 2
-            self.target_loc = (center_x, center_y)
-            return self.target_loc
-
-    def pixel_to_grid_coords(self, px_x: int, px_y: int) -> tuple[int, int]:
-        grid_x = int((px_x / self.screen_size.width) * self.grid_size[1])
-        grid_y = int((px_y / self.screen_size.height) * self.grid_size[0])
-        grid_x = max(0, min(self.grid_size[1] - 1, grid_x))
-        grid_y = max(0, min(self.grid_size[0] - 1, grid_y))
-        return (grid_x, grid_y)
-
-    def grid_coords_to_pixel(
-        self, grid_x: int, grid_y: int
-    ) -> tuple[int, int]:
-        px_x = int((grid_x / self.grid_size[1] * self.screen_size.width))
-        px_y = int((grid_y / self.grid_size[0] * self.screen_size.height))
-        return (px_x, px_y)
-
-    def create_grid(self, obstacle_threshold: int = 50) -> np.ndarray:
-        self.take_screenshot()
-        screenshot = cv2.cvtColor(self.screenshot, cv2.COLOR_RGB2GRAY)
-        screenshot = cv2.resize(screenshot, self.grid_size)
-        self.gridworld = np.where(screenshot < obstacle_threshold, 1, 0)
-        return self.gridworld
-
-    def setup_env(self, target_img_path: str) -> tuple:
-        self.take_screenshot()
-        curr_loc = self.get_current_location()
-        target_loc = self.get_target_location_ocv(target_img_path)
-        if not target_loc:
-            raise Exception("Error! Could not find target.")
-        self.create_grid()
-        curr_grid_loc = self.pixel_to_grid_coords(curr_loc[0], curr_loc[1])
-        target_grid_loc = self.pixel_to_grid_coords(
-            target_loc[0], target_loc[1]
-        )
-        return self.gridworld, curr_grid_loc, target_grid_loc
-
-    def display_gridworld(
-        self,
-        curr_loc: tuple[int, int],
-        target_loc: tuple[int, int],
-        path: list = None,
-    ):
-        plt.figure(figsize=(10, 10))
-        plt.imshow(self.gridworld, cmap="gray_r")
-        plt.plot(
-            curr_loc[0], curr_loc[1], "go", markersize=10, label="Current"
-        )
-        plt.plot(
-            target_loc[0], target_loc[1], "ro", markersize=10, label="Target"
-        )
-        if path:
-            path_x, path_y = zip(*path)
-            plt.plot(
-                path_x, path_y, "b-", linewidth=2, alpha=0.7, label="Path"
+            scale_x = screenshot_width / screen_width
+            scale_y = screenshot_height / screen_height
+            mouse_scaled = (
+                int(mouse_pos[0] * scale_x),
+                int(mouse_pos[1] * scale_y),
             )
-        plt.title("Gridworld")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        else:
+            mouse_scaled = (mouse_pos[0], mouse_pos[1])
+        self.mouse_loc = mouse_scaled
+
+    def __perform_template_matching(self, target_img_path: str):
+        img_gray = cv2.cvtColor(self.screenshot, cv2.COLOR_RGB2GRAY)
+        template = cv2.imread(target_img_path, cv2.IMREAD_GRAYSCALE)
+        assert template is not None, (
+            f"Error! Could not read template image: {target_img_path}"
+        )
+        w, h = template.shape[::-1]
+        res = cv2.matchTemplate(img_gray, template, cv2.TM_SQDIFF_NORMED)
+        min_val, _, min_loc, _ = cv2.minMaxLoc(res)
+        self.target_loc = min_loc
+        self.target_dim = (w, h)
+
+    def __create_gridworld_matrix(self):
+        screenshot_width, screenshot_height = self.screenshot_dim
+        target_width, target_height = self.target_dim
+        target_x, target_y = self.target_loc
+        mouse_x, mouse_y = self.mouse_loc
+        side_len = max(screenshot_width, screenshot_height)
+        self.scale_factor = self.matrix_size / side_len
+
+        matrix = np.zeros((self.matrix_size, self.matrix_size), dtype=int)
+
+        # Fill navigable area
+        display_w = int(screenshot_width * self.scale_factor)
+        display_h = int(screenshot_height * self.scale_factor)
+        matrix[:display_h, :display_w] = 1
+
+        # Fill target area
+        target_x_scaled = int(target_x * self.scale_factor)
+        target_y_scaled = int(target_y * self.scale_factor)
+        target_w_scaled = max(1, int(target_width * self.scale_factor))
+        target_h_scaled = max(1, int(target_height * self.scale_factor))
+        x_end = min(target_x_scaled + target_w_scaled, self.matrix_size)
+        y_end = min(target_y_scaled + target_h_scaled, self.matrix_size)
+        matrix[target_y_scaled:y_end, target_x_scaled:x_end] = 2
+
+        # Fill mouse position
+        mouse_x_scaled = int(mouse_x * self.scale_factor)
+        mouse_y_scaled = int(mouse_y * self.scale_factor)
+        if (
+            0 <= mouse_x_scaled < self.matrix_size
+            and 0 <= mouse_y_scaled < self.matrix_size
+        ):
+            matrix[mouse_y_scaled][mouse_x_scaled] = 3
+
+        self.grid_matrix = matrix
+
+    def __display_gridworld_matrix(self):
+        screenshot_width, screenshot_height = self.screenshot_dim
+        target_width, target_height = self.target_dim
+        target_x, target_y = self.target_loc
+        mouse_x, mouse_y = self.mouse_loc
+        side_len = max(screenshot_width, screenshot_height)
+        scale_factor = self.matrix_size / side_len
+
+        if self.matrix_size >= 1000:
+            grid_spacing = 20
+            target_min = 40
+            mouse_min = 20
+        elif self.matrix_size >= 100:
+            grid_spacing = 2
+            target_min = 4
+            mouse_min = 2
+        else:
+            grid_spacing = 1
+            target_min = 2
+            mouse_min = 1
+
+        matrix = np.zeros((self.matrix_size, self.matrix_size), dtype=int)
+
+        # Fill navigable
+        display_w = int(screenshot_width * scale_factor)
+        display_h = int(screenshot_height * scale_factor)
+        matrix[:display_h, :display_w] = 1
+
+        # Target
+        target_x_scaled = int(target_x * scale_factor)
+        target_y_scaled = int(target_y * scale_factor)
+        target_w_scaled = max(int(target_width * scale_factor), target_min)
+        target_h_scaled = max(int(target_height * scale_factor), target_min)
+        x_end = min(target_x_scaled + target_w_scaled, self.matrix_size)
+        y_end = min(target_y_scaled + target_h_scaled, self.matrix_size)
+        matrix[target_y_scaled:y_end, target_x_scaled:x_end] = 2
+
+        # Mouse
+        mouse_x_scaled = int(mouse_x * scale_factor)
+        mouse_y_scaled = int(mouse_y * scale_factor)
+        half_mouse = mouse_min // 2
+        y_start = max(0, mouse_y_scaled - half_mouse)
+        y_end = min(self.matrix_size, mouse_y_scaled + half_mouse + 1)
+        x_start = max(0, mouse_x_scaled - half_mouse)
+        x_end = min(self.matrix_size, mouse_x_scaled + half_mouse + 1)
+        matrix[y_start:y_end, x_start:x_end] = 3
+
+        # Plotting
+        fig, ax = plt.subplots(figsize=(7, 5))
+        cmap = ListedColormap(["black", "white", "red", "green"])
+        ax.imshow(
+            matrix,
+            cmap=cmap,
+            vmin=0,
+            vmax=3,
+            origin="upper",
+            interpolation="none",
+        )
+
+        for i in range(0, self.matrix_size, grid_spacing):
+            ax.axhline(y=i - 0.5, color="gray", linewidth=0.5, alpha=0.3)
+            ax.axvline(x=i - 0.5, color="gray", linewidth=0.5, alpha=0.3)
+
+        ax.set_title(f"Gridworld (n={self.matrix_size})")
+        ax.legend(
+            handles=[
+                plt.Rectangle(
+                    (0, 0), 1, 1, facecolor="black", label="Non-navigable"
+                ),
+                plt.Rectangle(
+                    (0, 0),
+                    1,
+                    1,
+                    facecolor="white",
+                    edgecolor="black",
+                    label="Navigable",
+                ),
+                plt.Rectangle((0, 0), 1, 1, facecolor="red", label="Target"),
+                plt.Rectangle(
+                    (0, 0), 1, 1, facecolor="green", label="Current Location"
+                ),
+            ],
+            loc="upper left",
+            bbox_to_anchor=(1.02, 1),
+            borderaxespad=0,
+        )
+
+        plt.tight_layout()
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H:%M:%S.%f")
+        path = os.path.join("data", "test", f"gridworld_plot_{timestamp}.png")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        # plt.savefig(path)
         plt.show()
+        # print(f">> Gridworld image saved to {path}")
+
+    def __save_grid_to_csv(self, output_dir="data/test"):
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H:%M:%S.%f")
+        filename = f"gridworld_matrix_{timestamp}.csv"
+        path = os.path.join(output_dir, filename)
+        np.savetxt(path, self.grid_matrix, delimiter=",", fmt="%d")
+        print(f">> Grid matrix saved to {path}")
+
+    def display_template_matching(self):
+        assert self.screenshot is not None, "Screenshot not captured."
+        assert self.mouse_loc is not None, "Mouse location not set."
+        assert self.target_loc is not None and self.target_dim is not None, (
+            "Target location/dim not set."
+        )
+
+        img_rgb = cv2.cvtColor(self.screenshot.copy(), cv2.COLOR_RGB2BGR)
+        annotated_img = img_rgb.copy()
+
+        # Draw full-screen square boundary
+        width, height = self.screenshot_dim  # (width, height)
+        side_len = max(width, height)
+        cv2.rectangle(
+            annotated_img, (0, 0), (side_len, side_len), (0, 0, 0), 10
+        )
+
+        # Draw target rectangle
+        top_left = self.target_loc
+        w, h = self.target_dim
+        bottom_right = (top_left[0] + w, top_left[1] + h)
+        cv2.rectangle(annotated_img, top_left, bottom_right, (0, 0, 255), 10)
+
+        # Draw mouse location
+        cv2.circle(
+            annotated_img,
+            self.mouse_loc,
+            radius=15,
+            color=(0, 255, 0),
+            thickness=5,
+        )
+
+        # Display and save
+        fig, ax = plt.subplots(figsize=(12, 8))
+        ax.imshow(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB))
+        ax.set_title("Template Match Debug View")
+        ax.axis("off")
+
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H:%M:%S.%f")
+        filename = f"template_match_debug_{timestamp}.png"
+        debug_path = os.path.join("data", "test", filename)
+        os.makedirs(os.path.dirname(debug_path), exist_ok=True)
+        # plt.savefig(debug_path)
+        plt.show()
+
+        print(f">> Debug image saved to {debug_path}")
+        print(f">> Target region: top_left={top_left}, size={w}x{h}")
+        print(f">> Mouse location: {self.mouse_loc}")
+
+    def build(self, target_img_path: str, save_csv=True):
+        self.__take_screenshot_and_mouse_position()
+        self.__perform_template_matching(target_img_path)
+        self.__create_gridworld_matrix()
+        # self.__display_gridworld_matrix()
+        if save_csv:
+            self.__save_grid_to_csv()
 
 
 if __name__ == "__main__":
-    import time
-
-    target_img_path = "./data/target.png"
-    g1 = GridWorld()
+    target_img_path = os.path.join(os.getcwd(), "data", "target.png")
     time.sleep(3)
-    g1.setup_env(target_img_path)
-    g1.display_gridworld(
-        g1.get_current_location(),
-        g1.get_target_location_ocv(target_img_path),
+    gw = GridWorld(matrix_size=1000)
+    gw.build(target_img_path=target_img_path, save_csv=False)
+    print(
+        f"matrix_size={gw.matrix_size}\n"
+        f"mouse_loc={gw.mouse_loc}\n"
+        f"target_loc={gw.target_loc}\n"
+        f"target_dim={gw.target_dim}\n"
+        f"screenshot_dim={gw.screenshot_dim}"
     )
-    print(f"current mouse position: {g1.current_loc}")
