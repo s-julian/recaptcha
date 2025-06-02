@@ -1,30 +1,40 @@
-from typing import Union
+import os
 
+import httpx
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 app = FastAPI()
 
+RECAPTCHA_SECRET = os.getenv("RECAPTCHA_SECRET", "your-secret-key")
 
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: Union[bool, None] = None
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+class RecaptchaToken(BaseModel):
+    token: str
 
 
 @app.get("/")
 async def read_root():
-    return {"Hello": "World"}
+    return FileResponse("static/index.html")
 
 
-@app.get("/items/{item_id}")
-async def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
-
-@app.put("/items/{item_id}")
-async def update_item(item_id: int, item: Item):
-    return {"item_name": item.name, "item_id": item_id}
+@app.post("/score")
+async def verify_recaptcha(data: RecaptchaToken):
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://www.google.com/recaptcha/api/siteverify",
+            data={"secret": RECAPTCHA_SECRET, "response": data.token},
+        )
+        result = response.json()
+        return {
+            "success": result.get("success", False),
+            "score": result.get("score", None),
+            "action": result.get("action", None),
+        }
 
 
 if __name__ == "__main__":
