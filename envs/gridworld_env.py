@@ -1,13 +1,13 @@
-import gym
+import gymnasium
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 import pag_nav as pag
 from GridWorld import GridWorld
 from Navigator import Navigator
 
 
-class ScreenGridWorldEnv(gym.Env):
+class ScreenGridWorldEnv(gymnasium.Env):
     """
     A custom Gym environment that wraps the GridWorld and Navigator classes
     to provide an RL interface for screen interaction.
@@ -16,7 +16,11 @@ class ScreenGridWorldEnv(gym.Env):
     metadata = {"render_modes": ["console"], "render_fps": 4}
 
     def __init__(
-        self, target_img_path: str, matrix_size: int = 1000, render_mode=None
+        self,
+        target_img_path: str,
+        matrix_size: int = 1000,
+        max_steps=1000,
+        render_mode=None,
     ):
         """
         Initializes the ScreenGridWorldEnv.
@@ -48,7 +52,6 @@ class ScreenGridWorldEnv(gym.Env):
             }
         )
 
-        # FIX: Changed action_space to Discrete(5) to include "wait" action
         self.action_space = spaces.Discrete(5)
 
         # Mapping Gym action (int) to Navigator direction (string)
@@ -77,6 +80,8 @@ class ScreenGridWorldEnv(gym.Env):
         self._target_location = None
         # Stores sequence of (x, y, action_taken_to_reach_this_state) grid coordinates
         self._agent_path = []
+        self.max_steps = max_steps
+        self.step_count = 0
 
     def _get_obs(self):
         """
@@ -142,6 +147,7 @@ class ScreenGridWorldEnv(gym.Env):
         rebuilding the GridWorld, and initializing the Navigator.
         """
         super().reset(seed=seed)  # Seed the random number generator if needed
+        self.step_count = 0
 
         print("\n--- Resetting Environment: Browser Setup ---")
         pag.browser_setup()
@@ -173,8 +179,6 @@ class ScreenGridWorldEnv(gym.Env):
         self._agent_location = np.array(
             [nav_initial_x, nav_initial_y], dtype=int
         )
-
-        # FIX: Get target location from the grid matrix (scaled coordinates)
         # Find where '2' (target) is in the grid matrix
         target_grid_coords = np.argwhere(self.grid_world.grid_matrix == 2)
         if len(target_grid_coords) == 0:
@@ -185,7 +189,6 @@ class ScreenGridWorldEnv(gym.Env):
         self._target_location = np.array(
             [target_grid_coords[0][1], target_grid_coords[0][0]], dtype=int
         )
-
         # Clear the path for a new episode
         self._agent_path = []
         # Add initial position to path with a 'None' action as it's the starting point
@@ -201,9 +204,11 @@ class ScreenGridWorldEnv(gym.Env):
 
     def step(self, action):
         """
-        Takes an action in the environment, performs the move in the gridworld.
-        If the target is reached, executes the full path with pyautogui and clicks.
+        Takes an action in the environment, performs the move in the
+        gridworld. If the target is reached, executes the full path
+        with pyautogui and clicks.
         """
+        self.step_count += 1
         # Translate Gym action to Navigator direction string
         direction_str = self._gym_action_to_navigator_direction[action]
 
@@ -213,7 +218,6 @@ class ScreenGridWorldEnv(gym.Env):
         if direction_str == "wait":
             # If it's a wait action, the agent's grid position does not change.
             # The new_agent_location is effectively the same as the old one.
-            # FIX for Issue 3: Use .copy() to ensure an independent array.
             new_agent_location = self._agent_location.copy()
         else:
             # For movement actions, perform the move using the Navigator.
@@ -236,29 +240,30 @@ class ScreenGridWorldEnv(gym.Env):
         terminated = (
             self.grid_world.grid_matrix[agent_grid_y, agent_grid_x] == 2
         )
+        truncated = self.step_count >= self.max_steps
         reward = 0  # Default reward
 
         if terminated:
             print(
                 "\n--- Agent reached target in gridworld! Executing full path on screen ---"
             )
-            for i, path_point in enumerate(self._agent_path):
-                grid_x, grid_y, action_taken_at_this_point = path_point
+            # for i, path_point in enumerate(self._agent_path):
+            #     grid_x, grid_y, action_taken_at_this_point = path_point
 
-                if (
-                    action_taken_at_this_point == 4
-                ):  # If this point was reached by a 'wait' action
-                    print(f"  Performing wait at grid ({grid_x}, {grid_y})")
-                    pag.idle()  # Use the idle function from pag.py
-                else:
-                    # For initial point (None action) or a movement action
-                    pyautogui_x, pyautogui_y = (
-                        self._grid_to_screen_center_pixel(grid_x, grid_y)
-                    )
-                    print(
-                        f"  Moving mouse to grid ({grid_x}, {grid_y}) -> screen ({pyautogui_x}, {pyautogui_y})"
-                    )
-                    pag.move_mouse(pyautogui_x, pyautogui_y)
+            #     if (
+            #         action_taken_at_this_point == 4
+            #     ):  # If this point was reached by a 'wait' action
+            #         print(f"  Performing wait at grid ({grid_x}, {grid_y})")
+            #         pag.idle()  # Use the idle function from pag.py
+            #     else:
+            #         # For initial point (None action) or a movement action
+            #         pyautogui_x, pyautogui_y = (
+            #             self._grid_to_screen_center_pixel(grid_x, grid_y)
+            #         )
+            #         print(
+            #             f"  Moving mouse to grid ({grid_x}, {grid_y}) -> screen ({pyautogui_x}, {pyautogui_y})"
+            #         )
+            #         pag.move_mouse(pyautogui_x, pyautogui_y)
 
             # After all moves, perform the click at the final target location
             final_click_x, final_click_y = self._grid_to_screen_center_pixel(
@@ -267,7 +272,7 @@ class ScreenGridWorldEnv(gym.Env):
             print(
                 f"  Performing click at final screen position: ({final_click_x}, {final_click_y})"
             )
-            pag.mouse_click(final_click_x, final_click_y)
+            # pag.mouse_click(final_click_x, final_click_y)
 
             # Determine reward based on whether the click was in the target region
             if self._check_click_in_target_region(
@@ -299,9 +304,9 @@ class ScreenGridWorldEnv(gym.Env):
             observation,
             reward,
             terminated,
-            False,
+            truncated,
             info,
-        )  # False for truncated
+        )
 
     def render(self):
         """
@@ -349,7 +354,6 @@ class ScreenGridWorldEnv(gym.Env):
             )
             # Note: _target_location in Gym env is (x, y) based on GridWorld.target_loc (original pixels)
             # For console output, it might be more intuitive to show its grid equivalent.
-            # FIX: _target_location is already in (x, y) scaled grid coordinates. No need to re-scale.
             target_grid_x = self._target_location[0]
             target_grid_y = self._target_location[1]
             print(f"Target Grid (x, y): ({target_grid_x}, {target_grid_y})")

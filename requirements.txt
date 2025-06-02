@@ -1,6 +1,7 @@
 torch
 gymnasium
 opencv-python
+stable-baselines3
 # gym==0.26.2  # legacy Gym for environments not migrated to Gymnasium
 numpy
 # pandas>=1.3 # use polars
