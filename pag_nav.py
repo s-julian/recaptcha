@@ -1,3 +1,4 @@
+import os
 import platform
 import random
 import time
@@ -14,7 +15,7 @@ CMD_KEY = "command" if IS_MAC else "ctrl"  # Used for most shortcuts
 CTRL_KEY = "ctrl"  # Used for tab switching on all platforms
 
 # WEBSITE_URL = "https://www.google.com"
-WEBSITE_URL = "https://www.google.com/recaptcha/api2/demo"
+WEBSITE_URL = os.getenv("TEST_URL")
 LOOP_COUNT = 5
 WAIT_TIME = 0.005
 
