@@ -356,7 +356,7 @@ if __name__ == "__main__":
         n_steps=512,
         batch_size=64,
         n_epochs=4,
-        log_dir="./gridworld_ppo_logs",
+        log_dir="./data/gridworld_ppo_logs",
         save_freq=25000,  # Save every 25k steps
         eval_freq=0,  # Evaluate every 10k steps
         verbose=1,
@@ -367,7 +367,7 @@ if __name__ == "__main__":
     # Test the trained model
     print("\nTesting the trained model...")
     test_trained_model(
-        model_path="./gridworld_ppo_logs/final_model.zip",
+        model_path="./data/gridworld_ppo_logs/final_model.zip",
         target_img_path=target_img_path,
         matrix_size=100,
         n_episodes=10,
